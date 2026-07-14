@@ -1,0 +1,24 @@
+# CODEOWNERS — encodes team ownership of each layer.
+#
+# Ownership here is a governance control, not just convention:
+#   - The Security team owns all DNS zones, public records, and internal top-level
+#     records because those live in the `network-and-security` layer and the `dns`
+#     module. Any change to them requires a Security-approved PR.
+#   - Developer self-service for internal app subdomains happens OUTSIDE these paths
+#     (in-cluster via external-dns), so it needs no PR here.
+#
+# Replace the placeholder team slugs below with your own GitHub org teams before use.
+
+# --- Management layer (remote state, ACR, ops Key Vault, shared Talos image, vWAN) ---
+/management/                            @example-org/management
+
+# --- Network-and-security layer (Security-owned) ---
+# VNet, NSGs, Key Vault, identities, NAT GW, Twingate, DNS zones + IAM, vWAN connection.
+/environments/*/network-and-security/   @example-org/security
+/modules/dns/                           @example-org/security
+
+# --- Talos cluster layer (Infrastructure-owned) ---
+/environments/*/talos-cluster/          @example-org/infrastructure
+
+# --- Application layer (Infrastructure / app teams) ---
+/kubernetes/                            @example-org/infrastructure

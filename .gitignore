@@ -1,0 +1,52 @@
+# Local .terraform directories
+.terraform/
+.terraform.lock.hcl.tmp
+
+# Local .download directories (Talos image VHDs, etc. — never commit)
+.downloads/
+
+# Terraform state — NEVER commit (this repo ships as code; users create their own state)
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
+
+# Crash log files
+crash.log
+crash.*.log
+
+# tfvars may contain secrets — ship *.tfvars.example instead
+*.tfvars
+*.tfvars.json
+
+# Override files (local-only resource overrides)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI configuration files
+.terraformrc
+terraform.rc
+
+# Terraform apply/plan logs and plan output files
+apply.log
+*_apply*.log
+simplified_apply.log
+tfplan
+*.tfplan
+
+# Talos / Kubernetes credentials (contain secrets)
+talosconfig
+kubeconfig
+kubeconfig-direct
+controlplane-*.yaml
+worker.yaml
+*-config.yaml
+
+# Twingate reports
+twingate-report*.zip
+
+# Certificates / private keys
+*.crt
+*.key
+*.pem
