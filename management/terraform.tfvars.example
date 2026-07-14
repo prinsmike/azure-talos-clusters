@@ -1,0 +1,34 @@
+# Management layer — example variables.
+# Copy to terraform.tfvars and fill in your own values. Never commit terraform.tfvars.
+
+# Your Azure subscription ID.
+azure_subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# Azure region for the shared management resources.
+location = "eastus"
+
+# Resource group that holds state storage, ACR, and the ops Key Vault.
+resource_group_name = "rg-talos-ops"
+
+# GLOBALLY UNIQUE — change these. 3-24 lowercase alphanumeric (storage),
+# 5-50 alphanumeric (registry).
+storage_account_name    = "sttalosstate"
+container_registry_name = "acrtalos"
+
+# Operations Key Vault (globally unique DNS name).
+operations_key_vault_name = "kv-talos-ops"
+
+# Lock down state storage / Key Vault to known IPs (recommended for real use).
+# When true, allowed_ip_ranges must list your office/CI/developer CIDRs.
+restrict_network_access = true
+allowed_ip_ranges       = [] # e.g. ["203.0.113.0/24"]
+
+# Optional vWAN + Azure Firewall (off by default).
+enable_vwan = false
+
+# Tags applied to all resources.
+tags = {
+  Project    = "talos-platform"
+  CostCenter = "platform-ops"
+  Layer      = "management"
+}
