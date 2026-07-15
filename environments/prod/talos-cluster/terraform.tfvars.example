@@ -1,0 +1,46 @@
+# Copy to terraform.tfvars and fill in your own values.
+# Do NOT commit terraform.tfvars (it is gitignored).
+
+# Subscriptions
+azure_subscription_id      = "00000000-0000-0000-0000-000000000000"
+management_subscription_id = "00000000-0000-0000-0000-000000000000" # leave "" to reuse azure_subscription_id
+
+# Management resources (state storage, ACR, shared Talos image gallery)
+management_resource_group_name = "rg-talos-ops"
+container_registry_name        = "acrtalos"
+enable_acr_pull                = true
+
+# Environment
+environment    = "prod"
+location       = "eastus"
+location_short = "eastus"
+
+# Network-and-security layer resource group
+network_resource_group_name = "rg-talos-prod-network-eastus"
+
+# Cluster
+cluster_name       = "talos-prod"
+talos_version      = "v1.11.5"
+kubernetes_version = "v1.32.1"
+
+# Shared Talos image (published by the management layer)
+talos_gallery_name          = "gal_talos"
+talos_image_definition_name = "talos-azure-amd64"
+talos_image_version         = "latest"
+
+# Control plane (3 zones for HA)
+control_plane_zones = ["1", "2", "3"]
+
+# Worker pools
+general_pool_instance_count = 2
+compute_pool_instance_count = 3
+
+# API server load balancer (must be inside the services subnet)
+api_server_lb_ip = "10.200.2.10"
+
+# Workload identity federation (enable after the cluster is bootstrapped and
+# you have its OIDC issuer URL; the identities must be enabled in the
+# network-and-security layer first).
+# oidc_issuer_url                = "https://<your-oidc-issuer>/"
+# enable_cert_manager_federation = true
+# enable_external_dns_federation = true
