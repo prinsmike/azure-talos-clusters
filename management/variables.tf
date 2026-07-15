@@ -219,6 +219,63 @@ variable "vwan_dnat_rules" {
 }
 
 # -----------------------------------------------------------------------------
+# Shared Talos Image (Azure Compute Gallery)
+# -----------------------------------------------------------------------------
+
+variable "create_talos_image" {
+  description = "Build and publish the shared Talos image to a Compute Gallery. Requires curl, unxz, and the az CLI on the machine running terraform apply."
+  type        = bool
+  default     = true
+}
+
+variable "talos_version" {
+  description = "Talos Linux version to publish (with leading 'v')"
+  type        = string
+  default     = "v1.11.5"
+}
+
+variable "talos_schematic_id" {
+  description = "Talos Image Factory schematic ID (optional; uses the module default if null)"
+  type        = string
+  default     = null
+}
+
+variable "talos_image_storage_account_name" {
+  description = "Storage account for the Talos VHD upload (globally unique)"
+  type        = string
+  default     = "sttalosimages"
+
+  validation {
+    condition     = can(regex("^[a-z0-9]{3,24}$", var.talos_image_storage_account_name))
+    error_message = "Storage account name must be 3-24 lowercase alphanumeric characters."
+  }
+}
+
+variable "talos_gallery_name" {
+  description = "Azure Compute Gallery name (alphanumeric, periods, underscores; no hyphens)"
+  type        = string
+  default     = "gal_talos"
+}
+
+variable "talos_image_definition_name" {
+  description = "Shared image definition name in the gallery"
+  type        = string
+  default     = "talos-azure-amd64"
+}
+
+variable "talos_image_target_regions" {
+  description = "Extra regions to replicate the Talos image to (the management region is always included). Set to the regions where clusters run."
+  type        = list(string)
+  default     = []
+}
+
+variable "talos_image_reader_principal_ids" {
+  description = "Object IDs granted Reader on the gallery (cross-subscription cluster deployers that must resolve the image version)"
+  type        = list(string)
+  default     = []
+}
+
+# -----------------------------------------------------------------------------
 # Tags
 # -----------------------------------------------------------------------------
 

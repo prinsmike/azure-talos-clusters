@@ -12,9 +12,18 @@ depends on. Owned by the **Management** team (see `.github/CODEOWNERS`).
   other layers via data sources
 - **vWAN** (optional, `enable_vwan=true`): Virtual WAN + Secured Hub for testing
   central connectivity
+- **Shared Talos image** (`talos-image.tf`, on by default): builds one Talos VHD
+  and publishes it to an **Azure Compute Gallery** so every cluster — including
+  clusters in other subscriptions/regions — consumes a single source of truth.
+  Toggle with `create_talos_image`. Requires `curl`, `unxz`, and the `az` CLI on
+  the apply host. See `docs/adr/0007-shared-talos-image-in-management.md`.
 
-> The shared **Talos image** (Azure Compute Gallery) is also published from this
-> layer — added in a later step (`talos-image.tf`).
+### Cross-subscription image sharing
+
+Clusters resolve the image via `data.azurerm_shared_image_version`. A cluster in a
+*different* subscription needs **Reader** on the gallery — add the deployer's object
+ID to `talos_image_reader_principal_ids`. Replicate the image into each cluster's
+region with `talos_image_target_regions`.
 
 ## Usage
 

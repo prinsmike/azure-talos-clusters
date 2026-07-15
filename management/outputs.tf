@@ -115,6 +115,35 @@ output "backend_config_example" {
 }
 
 # -----------------------------------------------------------------------------
+# Shared Talos Image (Compute Gallery)
+# -----------------------------------------------------------------------------
+
+output "talos_image_version_id" {
+  description = "Shared Talos image version ID — clusters consume this as source_image_id"
+  value       = var.create_talos_image ? module.talos_image[0].image_version_id : null
+}
+
+output "talos_gallery_id" {
+  description = "Azure Compute Gallery ID"
+  value       = var.create_talos_image ? module.talos_image[0].gallery_id : null
+}
+
+output "talos_gallery_name" {
+  description = "Azure Compute Gallery name (pass to cluster layers as talos_gallery_name)"
+  value       = var.create_talos_image ? module.talos_image[0].gallery_name : null
+}
+
+output "talos_image_definition_name" {
+  description = "Shared image definition name (pass to cluster layers as talos_image_definition_name)"
+  value       = var.create_talos_image ? module.talos_image[0].image_definition_name : null
+}
+
+output "talos_version" {
+  description = "Talos Linux version published to the gallery"
+  value       = var.create_talos_image ? module.talos_image[0].talos_version : null
+}
+
+# -----------------------------------------------------------------------------
 # vWAN (Optional)
 # -----------------------------------------------------------------------------
 
