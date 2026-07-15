@@ -1,0 +1,40 @@
+# dev / network-and-security — example variables.
+# Copy to terraform.tfvars and fill in your own values. Never commit terraform.tfvars.
+
+azure_subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# Subscription that holds the management-layer resources (state storage, ACR,
+# Operations Key Vault). Defaults to azure_subscription_id if left empty.
+management_subscription_id = ""
+
+project        = "talos"
+environment    = "dev"
+location       = "eastus"
+location_short = "eastus"
+
+# Read operational secrets (Twingate token, etc.) from the Management Key Vault
+# instead of passing them on the CLI.
+use_operations_key_vault            = false
+operations_key_vault_name           = "kv-talos-ops"
+operations_key_vault_resource_group = "rg-talos-ops"
+
+# Twingate private access (off by default).
+enable_twingate = false
+
+# Management access CIDRs (VPN / Twingate) allowed to reach the API / Talos ports.
+management_cidrs = [] # e.g. ["10.10.0.0/24"]
+
+# Internal private DNS zone for dev services reachable over the private network.
+private_dns_zone_name = "" # e.g. "int.example.com"
+private_dns_a_records = [] # e.g. [{ name = "api", records = ["10.100.1.10"] }]
+
+# Optional vWAN connection.
+enable_vwan_connection = false
+vwan_hub_id            = ""
+
+tags = {
+  Project     = "talos-platform"
+  CostCenter  = "platform-ops"
+  Environment = "dev"
+  ManagedBy   = "terraform"
+}
