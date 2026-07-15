@@ -1,0 +1,67 @@
+# Cilium Common Values
+# Shared configuration for all environments
+
+# IPAM mode - use Kubernetes for pod IP allocation
+ipam:
+  mode: kubernetes
+
+# Replace kube-proxy with Cilium
+kubeProxyReplacement: true
+
+# KubePrism - local proxy to API server (Talos Linux)
+k8sServiceHost: localhost
+k8sServicePort: 7445
+
+# Operator configuration
+operator:
+  replicas: 1
+
+# Hubble observability
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+
+# Enable Cilium Ingress Controller (legacy - prefer Gateway API)
+ingressController:
+  enabled: true
+  # Use shared LoadBalancer for all ingresses (cost-effective)
+  loadbalancerMode: shared
+  # Default secret namespace for TLS
+  secretsNamespace:
+    create: true
+    name: cilium-secrets
+  # Enforce HTTPS by default
+  enforceHttps: true
+  # Use Ingress class "cilium"
+  ingressClassName: cilium
+
+# Enable Gateway API support
+# Requires Gateway API CRDs to be installed first:
+#   kubectl apply -f kubernetes/infrastructure/gateway-api/install-crds.sh
+gatewayAPI:
+  enabled: true
+
+# Security context for Talos Linux compatibility
+# Talos has a read-only filesystem and requires privileged mode
+securityContext:
+  privileged: true
+  seLinuxOptions:
+    type: spc_t
+  capabilities:
+    ciliumAgent:
+      - CHOWN
+      - KILL
+      - NET_ADMIN
+      - NET_RAW
+      - IPC_LOCK
+      - SYS_MODULE
+      - SYS_ADMIN
+      - SYS_RESOURCE
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+      - SYS_PTRACE

@@ -1,0 +1,10 @@
+# Cilium Dev Environment Values
+# Internal LoadBalancer accessible via Twingate only
+
+ingressController:
+  # Azure internal LoadBalancer for dev (Twingate access)
+  service:
+    annotations:
+      service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    # Use an IP from the services subnet (10.100.2.x)
+    # loadBalancerIP: "10.100.2.20"  # Uncomment to set specific IP

@@ -1,0 +1,31 @@
+# Cilium Prod Environment Values
+# Internal LoadBalancer with traffic routed through vWAN firewall
+
+ingressController:
+  # Azure internal LoadBalancer for prod (vWAN firewall routes traffic here)
+  service:
+    annotations:
+      service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    # Use an IP from the services subnet (10.200.2.x)
+    # This IP should be configured as a backend in your vWAN firewall rules
+    # loadBalancerIP: "10.200.2.20"  # Uncomment to set specific IP
+
+# Production: increase operator replicas for HA
+operator:
+  replicas: 2
+
+# -----------------------------------------------------------------------------
+# WireGuard Encryption (Security Hardening)
+# Encrypts pod-to-pod traffic using WireGuard
+# NSG already allows port 51871/UDP for WireGuard traffic
+# Reference: https://docs.cilium.io/en/stable/security/network/encryption-wireguard/
+# -----------------------------------------------------------------------------
+encryption:
+  enabled: true
+  type: wireguard
+  # Encrypt traffic between nodes as well (recommended for production)
+  nodeEncryption: true
+  wireguard:
+    # User-space WireGuard (fallback if kernel module unavailable)
+    # Talos Linux includes WireGuard kernel module, so this isn't needed
+    userspaceFallback: false
