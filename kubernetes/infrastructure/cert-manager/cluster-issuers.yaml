@@ -1,0 +1,78 @@
+# Let's Encrypt ClusterIssuers with Azure DNS (DNS-01) solver.
+#
+# These issue PUBLIC certificates for the public zone (example.com) - DNS-01
+# needs public resolution, so it only works for the public zone. Internal apps
+# on apps.int.example.com use the internal-CA issuer instead
+# (see internal-ca-cluster-issuer.yaml and docs/adr/0008-dns-delegated-self-service.md).
+#
+# Before applying, update the following values:
+# - subscriptionID:     Your Azure subscription ID
+# - resourceGroupName:  Resource group holding the public DNS zone
+#                       (the network-and-security RG, e.g. rg-talos-prod-network-eastus)
+# - hostedZoneName:     Your public DNS zone name (e.g. example.com)
+# - clientID / tenantID: For Service Principal auth, or use managedIdentity (recommended)
+#
+# Recommended: use workload identity (managedIdentity below) instead of a Service
+# Principal secret - see workload-identity-setup.md. For Service Principal auth,
+# create the secret first:
+#   kubectl create secret generic azuredns-config \
+#     --namespace cert-manager \
+#     --from-literal=client-secret='<SP_PASSWORD>'
+
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    # Staging server - use for testing (fake certs, higher rate limits)
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: admin@example.com  # UPDATE: Your email for expiry notifications
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - dns01:
+          azureDNS:
+            subscriptionID: "00000000-0000-0000-0000-000000000000"  # UPDATE
+            resourceGroupName: "rg-talos-prod-network-eastus"  # UPDATE
+            hostedZoneName: "example.com"  # UPDATE
+            environment: AzurePublicCloud
+            # Service Principal authentication
+            clientID: "00000000-0000-0000-0000-000000000000"  # UPDATE
+            tenantID: "00000000-0000-0000-0000-000000000000"  # UPDATE
+            clientSecretSecretRef:
+              name: azuredns-config
+              key: client-secret
+            # For Managed Identity (recommended), comment out clientSecretSecretRef and use:
+            # managedIdentity:
+            #   clientID: "00000000-0000-0000-0000-000000000000"  # cert_manager_identity_client_id
+
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    # Production server - use for real certificates
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@example.com  # UPDATE: Your email for expiry notifications
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      - dns01:
+          azureDNS:
+            subscriptionID: "00000000-0000-0000-0000-000000000000"  # UPDATE
+            resourceGroupName: "rg-talos-prod-network-eastus"  # UPDATE
+            hostedZoneName: "example.com"  # UPDATE
+            environment: AzurePublicCloud
+            # Service Principal authentication
+            clientID: "00000000-0000-0000-0000-000000000000"  # UPDATE
+            tenantID: "00000000-0000-0000-0000-000000000000"  # UPDATE
+            clientSecretSecretRef:
+              name: azuredns-config
+              key: client-secret
+            # For Managed Identity (recommended), comment out clientSecretSecretRef and use:
+            # managedIdentity:
+            #   clientID: "00000000-0000-0000-0000-000000000000"  # cert_manager_identity_client_id
