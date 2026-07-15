@@ -1,0 +1,43 @@
+# external-dns — common Helm values (kubernetes-sigs / Bitnami chart).
+#
+# external-dns provides developer self-service DNS: it watches Services / Ingresses /
+# HTTPRoutes and creates records under the internal APPS zone automatically, so
+# developers expose an app just by setting a hostname — no Terraform, no security PR.
+#
+# It manages records in apps.int.example.com ONLY. Defense in depth (see ADR-0008):
+#   1. Azure RBAC   — the external-dns identity has DNS Zone Contributor on the apps
+#                     zone only (set in the network-and-security layer). This is the
+#                     real security boundary.
+#   2. domainFilters — external-dns is blind to the apex/public zones (below).
+#   3. TXT registry  — external-dns only touches records it owns.
+
+provider: azure-private-dns
+
+# Guardrail: only ever manage the developer app zone.
+domainFilters:
+  - apps.int.example.com
+
+# Never delete records external-dns did not create.
+policy: upsert-only
+
+# TXT ownership registry so external-dns only manages its own records.
+registry: txt
+txtPrefix: "extdns-"
+
+# Sources external-dns watches for hostnames.
+sources:
+  - service
+  - ingress
+  # - gateway-httproute   # enable when exposing apps via Gateway API HTTPRoutes
+
+# Use Azure Workload Identity (federated UAMI) — no client secret in-cluster.
+azure:
+  useWorkloadIdentityExtension: true
+
+serviceAccount:
+  create: true
+  name: external-dns
+
+# Required for the Azure Workload Identity webhook to project a token.
+podLabels:
+  azure.workload.identity/use: "true"

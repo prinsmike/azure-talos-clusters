@@ -1,0 +1,15 @@
+# prod overrides. Fill in from the network-and-security layer outputs and your
+# subscription/tenant. Deploy with values-common.yaml first, then this file.
+
+txtOwnerId: talos-prod
+
+azure:
+  # Resource group holding the apps private DNS zone (the network-and-security RG).
+  resourceGroup: "rg-talos-prod-network-eastus"
+  subscriptionId: "00000000-0000-0000-0000-000000000000"
+  tenantId: "00000000-0000-0000-0000-000000000000"
+
+serviceAccount:
+  annotations:
+    # terraform -chdir=environments/prod/network-and-security output -raw external_dns_identity_client_id
+    azure.workload.identity/client-id: "00000000-0000-0000-0000-000000000000"
