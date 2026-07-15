@@ -1,0 +1,55 @@
+# kube-prometheus-stack Prod Environment Values
+# HA configuration with zone-redundant storage
+
+# Alertmanager with HA and ZRS storage
+alertmanager:
+  alertmanagerSpec:
+    replicas: 2
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: managed-csi-premium-zrs
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+
+# Grafana with HA and persistent storage
+grafana:
+  replicas: 2
+  persistence:
+    enabled: true
+    storageClassName: managed-csi-premium-zrs
+    size: 10Gi
+  # Use external secret for admin password in production
+  # adminPassword: use-external-secret
+
+# Prometheus with HA and ZRS storage
+prometheus:
+  prometheusSpec:
+    replicas: 2
+    retention: 30d
+    retentionSize: 80GB
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: 2000m
+        memory: 8Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: managed-csi-premium-zrs
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 100Gi
+    # Pod anti-affinity for HA
+    podAntiAffinity: hard
+
+# Prometheus Operator with HA
+prometheusOperator:
+  admissionWebhooks:
+    certManager:
+      enabled: false

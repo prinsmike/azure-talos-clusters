@@ -1,0 +1,47 @@
+# kube-prometheus-stack Common Values
+# Shared configuration for all environments
+# See: https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack
+
+# Prometheus Node Exporter - enabled for Talos Linux
+# Requires monitoring namespace to have: pod-security.kubernetes.io/enforce=privileged
+nodeExporter:
+  enabled: true
+
+prometheus-node-exporter:
+  # Tolerate all taints to run on all nodes including control plane
+  tolerations:
+    - operator: Exists
+
+  # Host mounts for metrics collection
+  hostRootFsMount:
+    enabled: true
+    mountPropagation: HostToContainer
+
+  # Extra args for Talos - adjust filesystem paths
+  extraArgs:
+    - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+    - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
+
+# kube-state-metrics can run on control plane nodes if needed
+kube-state-metrics:
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+
+# Default rules enabled
+defaultRules:
+  create: true
+
+# Disable components not available on Talos Linux
+kubeControllerManager:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+kubeProxy:
+  enabled: false
+
+kubeEtcd:
+  enabled: false

@@ -1,0 +1,47 @@
+# kube-prometheus-stack Dev Environment Values
+# Smaller storage sizes, single replicas for cost efficiency
+
+# Alertmanager with minimal storage
+alertmanager:
+  alertmanagerSpec:
+    replicas: 1
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: managed-csi-premium-lrs
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+
+# Grafana with persistent storage
+grafana:
+  replicas: 1
+  persistence:
+    enabled: true
+    storageClassName: managed-csi-premium-lrs
+    size: 5Gi
+  # Admin password - override in production or use secret
+  adminPassword: admin
+
+# Prometheus with moderate storage
+prometheus:
+  prometheusSpec:
+    replicas: 1
+    retention: 7d
+    retentionSize: 15GB
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: managed-csi-premium-lrs
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
