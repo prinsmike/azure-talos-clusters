@@ -1,0 +1,82 @@
+# Gateway for internal apps (apps.int.example.com)
+# Provides HTTPS termination with automatic HTTP to HTTPS redirect, exposed on an
+# Azure internal LoadBalancer (reachable via the private-access solution).
+#
+# Prerequisites:
+# - Gateway API CRDs installed
+# - Cilium with gatewayAPI.enabled=true
+# - cert-manager with the internal-ca ClusterIssuer (see
+#   ../cert-manager/internal-ca-cluster-issuer.yaml)
+---
+# Certificate for the Gateway - wildcard cert for all internal apps.
+# apps.int.example.com is a private zone, so it is issued by the internal CA,
+# not Let's Encrypt (which needs public DNS resolution).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: internal-gateway-tls
+  namespace: kube-system
+spec:
+  secretName: internal-gateway-tls
+  issuerRef:
+    name: internal-ca
+    kind: ClusterIssuer
+  dnsNames:
+    - "*.apps.int.example.com"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: cilium-gateway-internal
+  namespace: kube-system
+  annotations:
+    # Azure internal LoadBalancer
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+spec:
+  gatewayClassName: cilium
+  infrastructure:
+    annotations:
+      # Ensure the LoadBalancer service gets the internal IP annotation
+      service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+  listeners:
+    # HTTPS listener - primary
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "*.apps.int.example.com"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: internal-gateway-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    # HTTP listener - redirects to HTTPS
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: "*.apps.int.example.com"
+      allowedRoutes:
+        namespaces:
+          from: All
+---
+# ReferenceGrant allows HTTPRoutes in other namespaces to reference this Gateway's
+# TLS secret in kube-system.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-app-routes
+  namespace: kube-system
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: monitoring
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: echo-test
+  to:
+    - group: ""
+      kind: Secret
+      name: internal-gateway-tls

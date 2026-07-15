@@ -1,0 +1,137 @@
+# HTTPRoutes for internal apps (apps.int.example.com)
+# Routes traffic from the internal Gateway to backend services.
+#
+# HTTPS enforcement is achieved via:
+# 1. HTTPS listener on the Gateway handles secure traffic
+# 2. HTTP listener redirects to HTTPS via a RequestRedirect filter
+---
+# HTTP to HTTPS redirect route
+# This catches all HTTP traffic and redirects to HTTPS.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-to-https-redirect
+  namespace: kube-system
+spec:
+  parentRefs:
+    - name: cilium-gateway-internal
+      namespace: kube-system
+      sectionName: http
+  hostnames:
+    - "*.apps.int.example.com"
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+---
+# Grafana route
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  parentRefs:
+    - name: cilium-gateway-internal
+      namespace: kube-system
+      sectionName: https
+  hostnames:
+    - grafana.apps.int.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: kube-prometheus-stack-grafana
+          port: 80
+---
+# Prometheus route
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  parentRefs:
+    - name: cilium-gateway-internal
+      namespace: kube-system
+      sectionName: https
+  hostnames:
+    - prometheus.apps.int.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: kube-prometheus-stack-prometheus
+          port: 9090
+---
+# Alertmanager route
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  parentRefs:
+    - name: cilium-gateway-internal
+      namespace: kube-system
+      sectionName: https
+  hostnames:
+    - alertmanager.apps.int.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: kube-prometheus-stack-alertmanager
+          port: 9093
+---
+# Hubble UI route
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hubble-ui
+  namespace: kube-system
+spec:
+  parentRefs:
+    - name: cilium-gateway-internal
+      namespace: kube-system
+      sectionName: https
+  hostnames:
+    - hubble.apps.int.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: hubble-ui
+          port: 80
+---
+# Echo server route (test workload)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: echo-server
+  namespace: echo-test
+spec:
+  parentRefs:
+    - name: cilium-gateway-internal
+      namespace: kube-system
+      sectionName: https
+  hostnames:
+    - echo.apps.int.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: echo-server
+          port: 80
