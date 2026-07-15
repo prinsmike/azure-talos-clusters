@@ -1,6 +1,13 @@
 # Talos Image Module
 #
-# Downloads Talos VHD from Image Factory and creates Azure Managed Image.
+# Downloads the Talos VHD from the Talos Image Factory, uploads it as a page blob,
+# builds an Azure Managed Image from it, and publishes that image to an Azure
+# Compute Gallery (Shared Image Gallery) as a versioned image.
+#
+# Publishing to a Compute Gallery — rather than referencing a plain managed image —
+# lets clusters in *other* subscriptions/regions consume a single shared Talos image
+# by data-source lookup. Grant consumers `Reader` on the gallery via
+# `reader_principal_ids` (see docs/adr/0007-shared-talos-image-in-management.md).
 
 terraform {
   required_providers {
@@ -22,6 +29,13 @@ locals {
   download_path = "${path.module}/.downloads"
   vhd_filename  = "talos-${var.talos_version}-azure-amd64.vhd"
   vhd_path      = "${local.download_path}/${local.vhd_filename}"
+
+  # Gallery image versions must be numeric MAJOR.MINOR.PATCH — strip the leading "v".
+  image_version = trimprefix(var.talos_version, "v")
+
+  # Always replicate to the gallery's own region, plus any extra requested regions
+  # (typically the regions where clusters run).
+  replica_regions = distinct(concat([var.location], var.target_regions))
 }
 
 resource "azurerm_storage_account" "talos_images" {
@@ -100,6 +114,8 @@ resource "null_resource" "upload_vhd" {
   }
 }
 
+# Managed image built from the uploaded VHD. This is the *source* for the gallery
+# image version below; it is not consumed directly by clusters.
 resource "azurerm_image" "talos" {
   depends_on = [null_resource.upload_vhd]
 
@@ -120,4 +136,72 @@ resource "azurerm_image" "talos" {
     talos-version = var.talos_version
     image-source  = "image-factory"
   })
+}
+
+# -----------------------------------------------------------------------------
+# Azure Compute Gallery (Shared Image Gallery)
+# -----------------------------------------------------------------------------
+
+resource "azurerm_shared_image_gallery" "talos" {
+  name                = var.gallery_name
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  description         = "Shared Talos Linux images consumed by all clusters (cross-subscription/region)."
+
+  tags = var.tags
+}
+
+resource "azurerm_shared_image" "talos" {
+  name                = var.image_definition_name
+  gallery_name        = azurerm_shared_image_gallery.talos.name
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  os_type             = "Linux"
+  hyper_v_generation  = "V2"
+  architecture        = "x64"
+  specialized         = false # Generalized
+
+  identifier {
+    publisher = var.image_publisher
+    offer     = var.image_offer
+    sku       = var.image_sku
+  }
+
+  tags = var.tags
+}
+
+resource "azurerm_shared_image_version" "talos" {
+  name                = local.image_version
+  gallery_name        = azurerm_shared_image_gallery.talos.name
+  image_name          = azurerm_shared_image.talos.name
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  managed_image_id    = azurerm_image.talos.id
+
+  dynamic "target_region" {
+    for_each = local.replica_regions
+    content {
+      name                   = target_region.value
+      regional_replica_count = var.regional_replica_count
+      storage_account_type   = "Standard_LRS"
+    }
+  }
+
+  tags = merge(var.tags, {
+    talos-version = var.talos_version
+  })
+}
+
+# -----------------------------------------------------------------------------
+# Cross-subscription consumption — grant Reader on the gallery to each consumer
+# principal (e.g. the identity that runs `terraform apply` for a cluster in
+# another subscription). Reader is required to resolve the image version ID.
+# -----------------------------------------------------------------------------
+
+resource "azurerm_role_assignment" "gallery_reader" {
+  for_each = toset(var.reader_principal_ids)
+
+  scope                = azurerm_shared_image_gallery.talos.id
+  role_definition_name = "Reader"
+  principal_id         = each.value
 }
