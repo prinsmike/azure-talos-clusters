@@ -24,9 +24,29 @@ enable_twingate = false
 # Management access CIDRs (VPN / Twingate) allowed to reach the API / Talos ports.
 management_cidrs = [] # e.g. ["10.10.0.0/24"]
 
-# Internal private DNS zone for dev services reachable over the private network.
-private_dns_zone_name = "" # e.g. "int.example.com"
-private_dns_a_records = [] # e.g. [{ name = "api", records = ["10.100.1.10"] }]
+# -----------------------------------------------------------------------------
+# DNS — three-zone model (see docs/adr/0008-dns-delegated-self-service.md)
+# -----------------------------------------------------------------------------
+
+# 1. Public zones (security-owned; peer-reviewed). Usually empty in dev.
+public_dns_zones = []
+
+# 2. Internal apex private zone — security-owned top-level/infra records.
+internal_apex_zone_name = "int.example.com"
+internal_apex_a_records = [
+  # { name = "api", records = ["10.100.1.10"] },
+  # { name = "grafana", records = ["10.100.1.20"] },
+]
+internal_apex_cname_records = []
+
+# 3. Internal apps private zone — developer self-service via external-dns.
+#    NO records are set here; external-dns creates them from Ingress/HTTPRoute
+#    annotations. Leave empty to disable the zone.
+internal_apps_zone_name = "apps.int.example.com"
+
+# Managed identities for DNS. external-dns is scoped to the apps zone ONLY.
+enable_cert_manager_identity = false
+enable_external_dns_identity = true
 
 # Optional vWAN connection.
 enable_vwan_connection = false
