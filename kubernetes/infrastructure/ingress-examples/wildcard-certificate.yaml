@@ -1,0 +1,25 @@
+# Example: Wildcard Certificate
+#
+# Creates a wildcard certificate that can be reused across multiple ingresses.
+# Only possible with the DNS-01 challenge (public zone).
+#
+# After the certificate is issued, reference the secret in your ingresses:
+#   tls:
+#     - hosts:
+#         - app.example.com
+#       secretName: wildcard-example-tls
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-example
+  namespace: default  # Or a shared namespace like cert-manager
+spec:
+  secretName: wildcard-example-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  # Include both apex and wildcard
+  dnsNames:
+    - "example.com"
+    - "*.example.com"

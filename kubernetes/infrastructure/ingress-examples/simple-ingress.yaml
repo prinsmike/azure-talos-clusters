@@ -1,0 +1,30 @@
+# Example: Simple Ingress with TLS
+#
+# This creates an ingress for a service with automatic TLS via cert-manager.
+# Update the host, service name, and port for your application.
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-app
+  namespace: default
+  annotations:
+    # Use Let's Encrypt production issuer (public zone)
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: cilium
+  tls:
+    - hosts:
+        - app.example.com
+      secretName: example-app-tls
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: example-app
+                port:
+                  number: 80
