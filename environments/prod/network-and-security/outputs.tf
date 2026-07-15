@@ -172,18 +172,28 @@ output "public_dns_zones_nameservers" {
   }
 }
 
-output "public_dns_a_records" {
-  description = "Map of zone names to their A record FQDNs"
-  value = {
-    for zone_name, zone in module.public_dns : zone_name => zone.a_records
-  }
+# -----------------------------------------------------------------------------
+# Internal DNS (private zones)
+# -----------------------------------------------------------------------------
+
+output "internal_apex_dns_zone_id" {
+  description = "Internal apex private DNS zone ID (e.g. int.example.com)"
+  value       = var.internal_apex_zone_name != "" ? module.internal_apex_dns[0].zone_id : null
 }
 
-output "public_dns_cname_records" {
-  description = "Map of zone names to their CNAME record FQDNs"
-  value = {
-    for zone_name, zone in module.public_dns : zone_name => zone.cname_records
-  }
+output "internal_apex_dns_zone_name" {
+  description = "Internal apex private DNS zone name"
+  value       = var.internal_apex_zone_name != "" ? module.internal_apex_dns[0].zone_name : null
+}
+
+output "internal_apps_dns_zone_id" {
+  description = "Internal apps private DNS zone ID (records managed by external-dns)"
+  value       = var.internal_apps_zone_name != "" ? module.internal_apps_dns[0].zone_id : null
+}
+
+output "internal_apps_dns_zone_name" {
+  description = "Internal apps private DNS zone name"
+  value       = var.internal_apps_zone_name != "" ? module.internal_apps_dns[0].zone_name : null
 }
 
 # -----------------------------------------------------------------------------
@@ -203,6 +213,25 @@ output "cert_manager_identity_client_id" {
 output "cert_manager_identity_principal_id" {
   description = "cert-manager managed identity principal ID"
   value       = var.enable_cert_manager_identity ? azurerm_user_assigned_identity.cert_manager[0].principal_id : null
+}
+
+# -----------------------------------------------------------------------------
+# external-dns Workload Identity
+# -----------------------------------------------------------------------------
+
+output "external_dns_identity_id" {
+  description = "external-dns managed identity ID"
+  value       = var.enable_external_dns_identity ? azurerm_user_assigned_identity.external_dns[0].id : null
+}
+
+output "external_dns_identity_client_id" {
+  description = "external-dns managed identity client ID (annotate the external-dns ServiceAccount with this)"
+  value       = var.enable_external_dns_identity ? azurerm_user_assigned_identity.external_dns[0].client_id : null
+}
+
+output "external_dns_identity_principal_id" {
+  description = "external-dns managed identity principal ID"
+  value       = var.enable_external_dns_identity ? azurerm_user_assigned_identity.external_dns[0].principal_id : null
 }
 
 # -----------------------------------------------------------------------------

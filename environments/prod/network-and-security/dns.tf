@@ -1,32 +1,23 @@
-# Public DNS Zones for Production Services
+# DNS — three-zone model (see docs/adr/0008-dns-delegated-self-service.md)
 #
-# Creates public DNS zones for external-facing services.
-# All changes are peer reviewed before applying.
+#   1. public_dns         Azure Public DNS  — internet-facing records. Security-owned;
+#                         changed only via peer-reviewed PR to this (security-owned) layer.
+#   2. internal_apex_dns  Azure Private DNS "int.example.com" — internal apex plus
+#                         top-level/infra records (api, vault, grafana, ingress...).
+#                         Security-owned; records set via the variables below.
+#   3. internal_apps_dns  Azure Private DNS "apps.int.example.com" — developer app
+#                         subdomains (myapp.apps.int.example.com), created automatically
+#                         by external-dns in-cluster from Ingress/HTTPRoute annotations.
+#                         NO Terraform-managed records here.
 #
-# Example usage in terraform.tfvars:
-#
-#   public_dns_zones = [
-#     {
-#       name = "apps.example.com"
-#       a_records = [
-#         { name = "api", records = ["203.0.113.10"] },
-#         { name = "rpc", records = ["203.0.113.11"] },
-#       ]
-#       txt_records = [
-#         { name = "@", records = ["v=spf1 -all"] },
-#       ]
-#     },
-#     {
-#       name = "apps.example.org"
-#       cname_records = [
-#         { name = "www", record = "cdn.example.com." },
-#       ]
-#     },
-#   ]
-#
-# After applying, configure your domain registrar with the nameservers
-# from the 'public_dns_zones_nameservers' output.
+# Azure Private DNS uses longest-suffix matching (NOT NS delegation) between the two
+# private zones, so myapp.apps.int.example.com resolves against the apps zone while
+# api.int.example.com resolves against the apex zone. That split is what lets the
+# external-dns identity hold DNS Zone Contributor on the apps zone ONLY (see iam.tf).
 
+# -----------------------------------------------------------------------------
+# Public zones (security-owned; peer-reviewed)
+# -----------------------------------------------------------------------------
 module "public_dns" {
   source   = "../../../modules/dns"
   for_each = { for zone in var.public_dns_zones : zone.name => zone }
@@ -42,5 +33,61 @@ module "public_dns" {
 
   tags = merge(var.tags, {
     Layer = "network-and-security"
+  })
+}
+
+# -----------------------------------------------------------------------------
+# Internal apex private zone (security-owned records)
+# -----------------------------------------------------------------------------
+module "internal_apex_dns" {
+  source = "../../../modules/dns"
+  count  = var.internal_apex_zone_name != "" ? 1 : 0
+
+  name                = var.internal_apex_zone_name
+  resource_group_name = azurerm_resource_group.network.name
+  is_private          = true
+
+  virtual_network_links = [
+    {
+      name                 = "link-apex-${var.environment}"
+      virtual_network_id   = module.vnet.id
+      registration_enabled = false
+    }
+  ]
+
+  # Top-level/infra records — security adds entries here (peer-reviewed).
+  a_records     = var.internal_apex_a_records
+  cname_records = var.internal_apex_cname_records
+
+  tags = merge(var.tags, {
+    Layer = "network-and-security"
+  })
+}
+
+# -----------------------------------------------------------------------------
+# Internal apps private zone (developer self-service via external-dns)
+# -----------------------------------------------------------------------------
+# Records in this zone are created in-cluster by external-dns, whose identity is
+# scoped to THIS zone only (see iam.tf). Terraform intentionally manages no records
+# here — do not add a_records/cname_records to this module.
+module "internal_apps_dns" {
+  source = "../../../modules/dns"
+  count  = var.internal_apps_zone_name != "" ? 1 : 0
+
+  name                = var.internal_apps_zone_name
+  resource_group_name = azurerm_resource_group.network.name
+  is_private          = true
+
+  virtual_network_links = [
+    {
+      name                 = "link-apps-${var.environment}"
+      virtual_network_id   = module.vnet.id
+      registration_enabled = false
+    }
+  ]
+
+  tags = merge(var.tags, {
+    Layer          = "network-and-security"
+    ManagedRecords = "external-dns"
   })
 }

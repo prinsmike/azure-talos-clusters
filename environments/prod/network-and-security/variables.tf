@@ -189,31 +189,31 @@ variable "use_least_privilege_roles" {
 }
 
 # -----------------------------------------------------------------------------
-# Public DNS Configuration (External services)
-# Records are peer reviewed before applying.
+# DNS — three-zone model (see docs/adr/0008-dns-delegated-self-service.md)
 # -----------------------------------------------------------------------------
 
+# Public zones (security-owned; peer-reviewed). Records change only via PR to this layer.
 variable "public_dns_zones" {
-  description = "List of public DNS zones to create - engineers add new zones here (peer reviewed)"
+  description = "Public DNS zones to create (internet-facing). Security adds zones/records here (peer-reviewed)."
   type = list(object({
     name = string # Zone name (e.g., 'example.com')
     a_records = optional(list(object({
-      name    = string # Subdomain (e.g., 'api' for api.example.com, '@' for apex)
+      name    = string # Subdomain ('@' for apex)
       ttl     = optional(number, 300)
-      records = list(string) # List of IPv4 addresses
+      records = list(string)
     })), [])
     cname_records = optional(list(object({
-      name   = string # Subdomain (e.g., 'www')
+      name   = string
       ttl    = optional(number, 300)
-      record = string # Target domain
+      record = string
     })), [])
     txt_records = optional(list(object({
-      name    = string # Subdomain (e.g., '@' for apex)
+      name    = string
       ttl     = optional(number, 300)
-      records = list(string) # TXT values
+      records = list(string)
     })), [])
     mx_records = optional(list(object({
-      name = string # Subdomain (e.g., '@' for apex)
+      name = string
       ttl  = optional(number, 300)
       records = list(object({
         preference = number
@@ -224,12 +224,52 @@ variable "public_dns_zones" {
   default = []
 }
 
+# Internal apex private zone (security-owned top-level/infra records).
+variable "internal_apex_zone_name" {
+  description = "Internal apex private DNS zone name, e.g. \"int.example.com\". Empty string disables it."
+  type        = string
+  default     = ""
+}
+
+variable "internal_apex_a_records" {
+  description = "A records for the internal apex zone (top-level/infra records; security-owned, peer-reviewed)."
+  type = list(object({
+    name    = string # Subdomain (e.g., 'api' for api.int.example.com)
+    ttl     = optional(number, 300)
+    records = list(string)
+  }))
+  default = []
+}
+
+variable "internal_apex_cname_records" {
+  description = "CNAME records for the internal apex zone (security-owned)."
+  type = list(object({
+    name   = string
+    ttl    = optional(number, 300)
+    record = string
+  }))
+  default = []
+}
+
+# Internal apps private zone (developer self-service via external-dns; no Terraform records).
+variable "internal_apps_zone_name" {
+  description = "Internal apps private DNS zone name, e.g. \"apps.int.example.com\". Records are managed by external-dns in-cluster, not Terraform. Empty string disables it."
+  type        = string
+  default     = ""
+}
+
 # -----------------------------------------------------------------------------
-# cert-manager Workload Identity
+# DNS Workload Identities
 # -----------------------------------------------------------------------------
 
 variable "enable_cert_manager_identity" {
-  description = "Create managed identity for cert-manager DNS-01 challenges"
+  description = "Create a managed identity for cert-manager DNS-01 challenges on the public zones."
+  type        = bool
+  default     = false
+}
+
+variable "enable_external_dns_identity" {
+  description = "Create a managed identity for external-dns, scoped (DNS Zone Contributor) to the apps zone ONLY."
   type        = bool
   default     = false
 }

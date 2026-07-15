@@ -16,12 +16,43 @@ operations_key_vault_resource_group = "rg-talos-ops"
 enable_twingate  = false
 management_cidrs = [] # e.g. ["10.10.0.0/24"]
 
-# Public DNS zones (security-owned; peer-reviewed). See docs/adr/0008 for the
-# full three-zone model introduced later.
-public_dns_zones = [] # e.g. [{ name = "example.com", a_records = [{ name = "api", records = ["203.0.113.10"] }] }]
+# -----------------------------------------------------------------------------
+# DNS — three-zone model (see docs/adr/0008-dns-delegated-self-service.md)
+# -----------------------------------------------------------------------------
 
-# Managed identity for cert-manager DNS-01 challenges on the public zones.
-enable_cert_manager_identity = false
+# 1. Public zones (security-owned; peer-reviewed). Configure your registrar with
+#    the nameservers from the 'public_dns_zones_nameservers' output after apply.
+public_dns_zones = [
+  # {
+  #   name = "example.com"
+  #   a_records = [
+  #     { name = "api", records = ["203.0.113.10"] },
+  #     { name = "www", records = ["203.0.113.11"] },
+  #   ]
+  #   txt_records = [
+  #     { name = "@", records = ["v=spf1 -all"] },
+  #   ]
+  # },
+]
+
+# 2. Internal apex private zone — security-owned top-level/infra records.
+internal_apex_zone_name = "int.example.com"
+internal_apex_a_records = [
+  # { name = "api", records = ["10.200.1.10"] },
+  # { name = "vault", records = ["10.200.1.20"] },
+]
+internal_apex_cname_records = []
+
+# 3. Internal apps private zone — developer self-service via external-dns.
+#    NO records are set here; external-dns creates them from Ingress/HTTPRoute
+#    annotations. Leave empty to disable the zone.
+internal_apps_zone_name = "apps.int.example.com"
+
+# Managed identities for DNS.
+#  - cert-manager: DNS-01 challenges on the PUBLIC zones (Let's Encrypt).
+#  - external-dns: scoped (DNS Zone Contributor) to the apps zone ONLY.
+enable_cert_manager_identity = true
+enable_external_dns_identity = true
 
 # Extra inbound NSG rules for the workers subnet (open ports declaratively).
 custom_worker_ingress_rules = []
