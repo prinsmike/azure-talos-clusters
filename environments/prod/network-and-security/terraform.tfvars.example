@@ -1,0 +1,47 @@
+# prod / network-and-security — example variables.
+# Copy to terraform.tfvars and fill in your own values. Never commit terraform.tfvars.
+
+azure_subscription_id      = "00000000-0000-0000-0000-000000000000"
+management_subscription_id = "" # subscription holding state storage / ACR / ops Key Vault
+
+project        = "talos"
+environment    = "prod"
+location       = "eastus"
+location_short = "eastus"
+
+use_operations_key_vault            = false
+operations_key_vault_name           = "kv-talos-ops"
+operations_key_vault_resource_group = "rg-talos-ops"
+
+enable_twingate  = false
+management_cidrs = [] # e.g. ["10.10.0.0/24"]
+
+# Public DNS zones (security-owned; peer-reviewed). See docs/adr/0008 for the
+# full three-zone model introduced later.
+public_dns_zones = [] # e.g. [{ name = "example.com", a_records = [{ name = "api", records = ["203.0.113.10"] }] }]
+
+# Managed identity for cert-manager DNS-01 challenges on the public zones.
+enable_cert_manager_identity = false
+
+# Extra inbound NSG rules for the workers subnet (open ports declaratively).
+custom_worker_ingress_rules = []
+# e.g.
+# custom_worker_ingress_rules = [{
+#   name                    = "AllowAppP2P"
+#   priority                = 200
+#   direction               = "Inbound"
+#   access                  = "Allow"
+#   protocol                = "Tcp"
+#   destination_port_ranges = ["30303"]
+#   source_address_prefix   = "*"
+# }]
+
+enable_vwan_connection = false
+vwan_hub_id            = ""
+
+tags = {
+  Project     = "talos-platform"
+  CostCenter  = "platform-ops"
+  Environment = "production"
+  ManagedBy   = "terraform"
+}
