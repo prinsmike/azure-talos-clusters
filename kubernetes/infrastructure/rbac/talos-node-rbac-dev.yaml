@@ -1,0 +1,29 @@
+# Dev Environment - Direct node bindings for Talos nodes
+#
+# Apply this in addition to talos-node-rbac.yaml if the system:nodes
+# group binding doesn't work in your environment.
+#
+# Update the node names to match your cluster's actual node names
+# (VMSS instances use the format: vmss-<name>000000, 000001, ...).
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: talos-node-list-nodes-dev
+  labels:
+    app.kubernetes.io/name: talos-node-rbac
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/environment: dev
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: talos-node-list-nodes
+subjects:
+  # Control plane node
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: system:node:vmss-talos-dev-cp000000
+  # Worker nodes
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: system:node:vmss-talos-dev-workers000000

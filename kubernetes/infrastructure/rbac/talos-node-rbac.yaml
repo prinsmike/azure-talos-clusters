@@ -1,0 +1,37 @@
+# Talos Node RBAC - Allow nodes to list other nodes
+#
+# This fixes the Talos KubernetesPullController error:
+#   "nodes is forbidden: User "system:node:..." cannot list resource "nodes""
+#
+# Talos uses node-level client certificates for kubelet authentication.
+# The default Kubernetes RBAC doesn't grant nodes permission to list nodes,
+# which is required by Talos's KubernetesPullController.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: talos-node-list-nodes
+  labels:
+    app.kubernetes.io/name: talos-node-rbac
+    app.kubernetes.io/component: rbac
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+---
+# Bind to the system:nodes group (standard kubelet group)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: talos-node-list-nodes
+  labels:
+    app.kubernetes.io/name: talos-node-rbac
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: talos-node-list-nodes
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:nodes
