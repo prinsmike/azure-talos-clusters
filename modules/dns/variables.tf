@@ -2,7 +2,7 @@
 # Supports both private (internal) and public DNS zones
 
 variable "name" {
-  description = "Name of the DNS zone (e.g., dev.company.com)"
+  description = "Name of the DNS zone (e.g., int.example.com)"
   type        = string
 
   validation {
