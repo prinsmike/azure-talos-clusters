@@ -50,3 +50,6 @@ twingate-report*.zip
 *.crt
 *.key
 *.pem
+
+# Local-only scrub script (carries a project-specific token denylist — keep private)
+scripts/scrub-local.sh
