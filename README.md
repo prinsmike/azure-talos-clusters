@@ -31,6 +31,11 @@ without rewriting anything.
 
 ## Architecture
 
+![The four infrastructure layers — Management, Network & Security, Talos Cluster, and
+Applications — stacked bottom to top. Management publishes a shared Talos image via the
+Compute Gallery; the upper layers resolve the lower ones through Azure data source
+lookups rather than remote state.](docs/infra-layers.png)
+
 Four conceptual layers, each with a clear owner:
 
 | Layer | Location | Owner | Contents |
