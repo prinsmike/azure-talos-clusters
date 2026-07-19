@@ -49,6 +49,17 @@ Four conceptual layers, each with a clear owner:
 Terraform remote state — enabling independent lifecycle management, no circular
 dependencies, and easier disaster recovery.
 
+### Network topology (prod)
+
+The Azure network and control-plane view: the management subscription (remote state,
+ACR, Operations Key Vault, shared Talos image, optional vWAN Hub) and the prod VNet
+(Twingate connectors, API Load Balancer, control-plane VMSS across three zones, and a
+shared workers subnet holding the general and compute pools).
+
+![Production network topology — the management subscription resources feeding the prod
+VNet, with the API Load Balancer fronting three per-zone control-plane VMSS and a single
+workers subnet containing the general and compute worker pools.](docs/diagrams/prod-network-topology.png)
+
 ### DNS model (three zones per environment)
 
 DNS lives in the security-owned network-and-security layer. See
@@ -64,6 +75,18 @@ Public apps get Let's Encrypt certificates (DNS-01;
 [ADR-0005](docs/adr/0005-cert-manager-workload-identity.md)); internal apps get
 certificates from an in-cluster internal CA. external-dns holds a workload identity
 scoped to the apps zone **only**.
+
+### Application traffic, DNS & certificates
+
+The in-cluster view of how requests reach applications and how DNS records and TLS
+certificates are provisioned — public traffic via the vWAN firewall and internal
+traffic via Twingate, both landing on Cilium Gateways, plus cert-manager and
+external-dns writing to the DNS zones through workload-identity federation. Mermaid
+source: [`docs/diagrams/kubernetes-internals.md`](docs/diagrams/kubernetes-internals.md).
+
+![Kubernetes internals — public and internal traffic flowing through Cilium Gateways to
+Services and pods, with cert-manager issuing TLS certificates and external-dns writing
+records to the Azure DNS zones via workload-identity federation.](docs/diagrams/kubernetes-internals.png)
 
 ## Directory Structure
 
@@ -96,6 +119,7 @@ azure-talos-clusters/
 │   └── vwan/  vwan-connection/
 ├── docs/
 │   ├── adr/                          # Architecture Decision Records
+│   ├── diagrams/                     # Prod network topology + K8s internals diagrams
 │   ├── ROADMAP.md
 │   └── infra-layers.png              # Layer diagram
 ├── TAGGING_STANDARDS.md
