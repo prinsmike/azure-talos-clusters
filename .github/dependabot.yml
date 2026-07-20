@@ -1,0 +1,54 @@
+# Dependabot version updates.
+#
+# This is separate from Dependabot *security* updates (enabled in repo
+# settings), which only open PRs when a dependency has a published CVE.
+# The rules below keep dependencies current even when nothing is vulnerable.
+#
+# Updates are grouped so a bump wave arrives as one PR per ecosystem rather
+# than one PR per dependency — this repo has 11 Terraform layers/modules that
+# all track the same providers.
+version: 2
+
+updates:
+  # -------------------------------------------------------------------------
+  # GitHub Actions used by .github/workflows/validate.yml
+  #
+  # NOTE: Actions are restricted by an allowlist (repo Settings > Actions):
+  # GitHub-owned actions plus the pattern `hashicorp/setup-terraform@*`.
+  # Version bumps to the three actions already in use stay within that
+  # allowlist; adding a NEW third-party action requires an allowlist entry
+  # first or its workflow run is refused.
+  # -------------------------------------------------------------------------
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # -------------------------------------------------------------------------
+  # Terraform providers and modules.
+  #
+  # Every layer declares its own required_providers block, so each directory
+  # is tracked independently. Constraints are written as `~> 4.0`, meaning
+  # Dependabot only opens a PR when a new MAJOR is published (e.g. azurerm
+  # 5.x) and the constraint needs widening — patch/minor bumps resolve on
+  # `terraform init` without a code change.
+  # -------------------------------------------------------------------------
+  - package-ecosystem: terraform
+    directories:
+      - /management
+      - /environments/*/*
+      - /modules/*
+    schedule:
+      interval: weekly
+    groups:
+      terraform:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore(deps)"
