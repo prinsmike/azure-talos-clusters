@@ -34,7 +34,7 @@ without rewriting anything.
 ![The four infrastructure layers — Management, Network & Security, Talos Cluster, and
 Applications — stacked bottom to top. Management publishes a shared Talos image via the
 Compute Gallery; the upper layers resolve the lower ones through Azure data source
-lookups rather than remote state.](docs/infra-layers.png)
+lookups rather than remote state.](docs/diagrams/infra-layers.png)
 
 Four conceptual layers, each with a clear owner:
 
@@ -88,6 +88,54 @@ source: [`docs/diagrams/kubernetes-internals.md`](docs/diagrams/kubernetes-inter
 Services and pods, with cert-manager issuing TLS certificates and external-dns writing
 records to the Azure DNS zones via workload-identity federation.](docs/diagrams/kubernetes-internals.png)
 
+## Monitoring
+
+**Monitoring ships with the cluster, not after it.** In practice monitoring is usually
+an afterthought — the cluster goes live, runs blind for months, and someone eventually
+tries to retrofit an observability stack into a busy production cluster. That
+retrofit is where things break: node-exporter needs a privileged namespace, Prometheus
+wants large PVCs and a lot of memory on nodes already at their limit, and the initial
+scrape of every pod in the estate lands on an unprepared control plane. I've watched
+exactly that destabilise production services badly enough that the monitoring effort
+was abandoned — leaving the cluster blind *and* the team wary of trying again.
+
+So `kube-prometheus-stack` (Prometheus, Grafana, Alertmanager) is part of the platform
+install in step 4, before workloads arrive. Capacity for it is budgeted into the node
+pools from day one, and the first time it scrapes a cluster there is nothing on there
+to disturb.
+
+![Grafana cluster dashboard showing network I/O pressure over time, plus gauges for
+cluster memory usage at 55%, CPU usage at 12.52% of 2 cores, and filesystem usage at
+8.35% of 36.45 GiB.](docs/images/grafana-cluster-dashboard.png)
+
+| Component | Dev | Prod |
+|-----------|-----|------|
+| Prometheus | 1 replica, 20Gi LRS, 7d retention | 2 replicas, 100Gi ZRS, 30d retention |
+| Alertmanager | 1 replica, 2Gi LRS | 2 replicas, 5Gi ZRS |
+| Grafana | 1 replica, 5Gi LRS | 2 replicas, 10Gi ZRS |
+
+Talos-specific tuning is already applied in
+[`kubernetes/infrastructure/monitoring/`](kubernetes/infrastructure/monitoring/):
+scrape targets that don't exist on Talos are disabled (`kubeControllerManager`,
+`kubeScheduler`, `kubeEtcd`, and `kubeProxy` — replaced by Cilium), node-exporter has
+filesystem exclusions for the immutable root, and every component tolerates the
+control-plane taint so no node goes unmonitored.
+
+```bash
+kubectl create namespace monitoring
+kubectl label namespace monitoring pod-security.kubernetes.io/enforce=privileged
+
+helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  --namespace monitoring --version 66.3.1 \
+  -f kubernetes/infrastructure/monitoring/values-common.yaml \
+  -f kubernetes/infrastructure/monitoring/values-dev.yaml   # or values-prod.yaml
+```
+
+Dev ships with `admin` / `admin` for Grafana; prod expects the admin credential to come
+from external secret management. See the
+[monitoring README](kubernetes/infrastructure/monitoring/README.md) for access, upgrade,
+and tuning details.
+
 ## Directory Structure
 
 ```
@@ -120,6 +168,7 @@ azure-talos-clusters/
 ├── docs/
 │   ├── adr/                          # Architecture Decision Records
 │   ├── diagrams/                     # Prod network topology + K8s internals diagrams
+│   ├── images/                       # Screenshots (Grafana cluster dashboard)
 │   ├── ROADMAP.md
 │   └── infra-layers.png              # Layer diagram
 ├── TAGGING_STANDARDS.md
