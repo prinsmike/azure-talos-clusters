@@ -26,7 +26,7 @@ must be green before this can merge into main.
 - [ ] No secrets, real subscription/tenant IDs, public IPs, or client-specific names — placeholders only (`example.com`, `00000000-0000-0000-0000-000000000000`).
 - [ ] Only `*.tfvars.example` added/changed — never a real `*.tfvars`, state, `talosconfig`, or `kubeconfig`.
 - [ ] Ran `./scripts/ci-hygiene.sh` locally (and `./scripts/scrub-local.sh` if available) — passes.
-- [ ] Docs updated (README / CLAUDE / ADR) if behaviour or interfaces changed.
+- [ ] Docs updated (README / ADR) if behaviour or interfaces changed.
 - [ ] For a new architectural decision: added an ADR under `docs/adr/`.
 
 ## Notes for reviewers

@@ -172,7 +172,6 @@ azure-talos-clusters/
 │   ├── ROADMAP.md
 │   └── infra-layers.png              # Layer diagram
 ├── TAGGING_STANDARDS.md
-├── CLAUDE.md
 └── LICENSE
 ```
 
@@ -223,8 +222,8 @@ terraform apply -var="azure_subscription_id=<sub-id>"
 ```
 
 Optional features (all default off) — Twingate, DNS zones, cert-manager/external-dns
-identities, vWAN — are toggled by variables in `terraform.tfvars`. See the ADRs and
-`CLAUDE.md` for each flow.
+identities, vWAN — are toggled by variables in `terraform.tfvars`. See the ADRs for
+each flow.
 
 ### 3. Talos Cluster
 
@@ -275,7 +274,7 @@ Environments can live in different subscriptions from the management resources. 
 using remote state cross-subscription). The Terraform identity needs, cross
 subscription: `Storage Blob Data Contributor` on the state account,
 `Key Vault Secrets User` on the ops Key Vault, `Reader` on the Talos image gallery,
-and `Network Contributor` on the vWAN Hub RG (if using vWAN). See `CLAUDE.md`.
+and `Network Contributor` on the vWAN Hub RG (if using vWAN).
 
 ## Talos-Specific Notes
 
@@ -308,7 +307,6 @@ and `Network Contributor` on the vWAN Hub RG (if using vWAN). See `CLAUDE.md`.
 - **[docs/adr/](docs/adr/)** — Architecture Decision Records (the "why").
 - **[docs/ROADMAP.md](docs/ROADMAP.md)** — planned direction (list-driven worker pools,
   first-class autoscaling, GitOps, backup/DR, policy, and more).
-- **[CLAUDE.md](CLAUDE.md)** — working notes, common commands, and gotchas.
 - **[TAGGING_STANDARDS.md](TAGGING_STANDARDS.md)** — resource tagging conventions.
 
 ## License
