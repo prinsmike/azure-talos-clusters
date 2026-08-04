@@ -3,6 +3,15 @@
 # Private zones: Used for internal services, linked to VNets
 # Public zones: Used for external services, returns nameservers for delegation
 
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 5.0"
+    }
+  }
+}
+
 #------------------------------------------------------------------------------
 # Private DNS Zone (for internal/dev environments)
 #------------------------------------------------------------------------------

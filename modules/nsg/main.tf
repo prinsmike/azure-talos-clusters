@@ -3,6 +3,15 @@
 # Creates an NSG with rules passed as a list variable.
 # This makes rules easier to manage and audit.
 
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 5.0"
+    }
+  }
+}
+
 resource "azurerm_network_security_group" "this" {
   name                = var.name
   location            = var.location

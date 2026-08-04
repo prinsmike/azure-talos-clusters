@@ -3,6 +3,15 @@
 # Generic VMSS module for Talos Linux nodes.
 # Supports both control plane (single-zone) and worker (multi-zone) configurations.
 
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 5.0"
+    }
+  }
+}
+
 locals {
   placeholder_ssh_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCqal0MPYudoiFY7vPDWvfTPWZIWB/NubhB991U6uGC/OjCOy+Cu0qy5CdO1gG4dRHx0tEWKpZkLyPOlRX6D+NCU+LwfbS4nM67l7WP+3D6LBtz6oEGKI6TW13B/NpbynYKex0I/grUB/SRl90MCBmLayI7nNNWt522LpYXG8N5SnIinzcC8uScPDNZiOynbuzYqaZexdAlTpf/+pcrqtl+qVknk0Z7TBXnNPvp5OtWd4zYhD1dpAMNZrOB9YGH0i7bul/3FW2tMtUYFVtJDeYpaILxrF7gfq95M5+0F3cbyDLgcSVxYn0tBzhNtWtJYGiQCxAcg2DWcNrR9S/Ty81l talos-placeholder"
 }

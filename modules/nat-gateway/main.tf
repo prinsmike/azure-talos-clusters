@@ -2,6 +2,15 @@
 #
 # Creates a NAT gateway with public IP for outbound internet access.
 
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 5.0"
+    }
+  }
+}
+
 resource "azurerm_public_ip" "this" {
   name                = var.public_ip_name
   location            = var.location
