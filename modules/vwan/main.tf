@@ -4,7 +4,7 @@
 # Used for centralized network connectivity and security.
 
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.9"
 
   required_providers {
     azurerm = {
