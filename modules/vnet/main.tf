@@ -3,6 +3,15 @@
 # Creates a VNet with configurable subnets via a list variable.
 # Subnets can have optional delegations and service endpoints.
 
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 5.0"
+    }
+  }
+}
+
 resource "azurerm_virtual_network" "this" {
   name                = var.name
   location            = var.location

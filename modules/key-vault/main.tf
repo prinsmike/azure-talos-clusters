@@ -3,6 +3,15 @@
 # Creates an Azure Key Vault with configurable access policies.
 # Uses only external azurerm_key_vault_access_policy resources to avoid conflicts.
 
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 5.0"
+    }
+  }
+}
+
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "this" {
