@@ -30,9 +30,14 @@ jobs:
       - name: terraform fmt
         run: terraform fmt -check -recursive -diff
 
+      # Every layer is validated even when an earlier one fails, so a single run
+      # reports all breakage. Aborting on the first failure hid real errors: a
+      # provider upgrade broke both network-and-security and talos-cluster, but
+      # only the former was ever reported.
       - name: terraform validate (all layers)
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          failed=()
           for d in \
             management \
             environments/dev/network-and-security \
@@ -40,10 +45,20 @@ jobs:
             environments/prod/network-and-security \
             environments/prod/talos-cluster; do
             echo "::group::$d"
-            terraform -chdir="$d" init -backend=false -input=false -no-color
-            terraform -chdir="$d" validate -no-color
+            if terraform -chdir="$d" init -backend=false -input=false -no-color \
+              && terraform -chdir="$d" validate -no-color; then
+              echo "$d: OK"
+            else
+              failed+=("$d")
+              echo "::error title=terraform validate::$d failed"
+            fi
             echo "::endgroup::"
           done
+          if [ ${#failed[@]} -gt 0 ]; then
+            echo "Invalid layers (${#failed[@]}): ${failed[*]}"
+            exit 1
+          fi
+          echo "All layers valid."
 
   yaml:
     name: YAML manifests parse
