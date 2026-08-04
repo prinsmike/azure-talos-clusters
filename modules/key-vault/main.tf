@@ -14,6 +14,11 @@ resource "azurerm_key_vault" "this" {
   soft_delete_retention_days = var.soft_delete_retention_days
   purge_protection_enabled   = var.purge_protection_enabled
 
+  # Required since azurerm 5.0 (was optional, defaulting to false, in 4.x).
+  # Must stay false: this module grants access exclusively through the
+  # azurerm_key_vault_access_policy resources below, which RBAC mode ignores.
+  rbac_authorization_enabled = false
+
   network_acls {
     default_action = var.network_acls_default_action
     bypass         = "AzureServices"

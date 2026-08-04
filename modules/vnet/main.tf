@@ -31,5 +31,12 @@ resource "azurerm_subnet" "this" {
     }
   }
 
-  service_endpoints = each.value.service_endpoints
+  # azurerm 5.0 replaced the `service_endpoints` list with repeatable
+  # `service_endpoint` blocks. The module variable stays a list of strings.
+  dynamic "service_endpoint" {
+    for_each = each.value.service_endpoints
+    content {
+      service = service_endpoint.value
+    }
+  }
 }
